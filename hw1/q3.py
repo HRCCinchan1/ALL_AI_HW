@@ -59,170 +59,124 @@ def repeated_backward_astar(
     actual_maze: List[List[int]],
     start: Tuple[int, int] = START_NODE,
     goal: Tuple[int, int] = END_NODE,
+    tie_breaking = "max_g", 
     visualize_callbacks: Optional[Dict[str, Callable[[Tuple[int, int]], None]]] = None,
 ) -> Tuple[bool, List[Tuple[int, int]], int, int]:
     
     # TODO: Implement Backward A* with max_g tie-braking strategy.
-    # Use heapq for standard priority queue implementation and name your max_g heap class as `CustomPQ_maxG` and use it. 
-    
-    # ── Setup ────────────────────────────────────────────────────────────────
+
     actual_grid = [[BLACK if actual_maze[r][c] == 1 else WHITE for c in range(ROWS)] for r in range(ROWS)]
-    agent_grid  = [[GREY] * ROWS for _ in range(ROWS)]
+    agent_grid = [[GREY] * ROWS for _ in range(ROWS)]
 
-    # Backward A* heuristic: Manhattan distance from each cell to the AGENT (start)
-    # This changes every replan since the agent moves — recomputed inside the loop
-    def make_h(agent_pos: Tuple[int, int]) -> List[List[int]]:
-        ar, ac = agent_pos
-        return [[abs(ar - r) + abs(ac - c) for c in range(ROWS)] for r in range(ROWS)]
-
-    # g-values and search counters for lazy reset
-    g      = [[float("inf")] * ROWS for _ in range(ROWS)]
+    g = [[float("inf")] * ROWS for _ in range(ROWS)]
     search = [[0] * ROWS for _ in range(ROWS)]
     counter = 0
 
-    # Extract visualization callbacks
-    on_frontier = visualize_callbacks.get("on_frontier") if visualize_callbacks else None
-    on_expanded = visualize_callbacks.get("on_expanded") if visualize_callbacks else None
-    on_move     = visualize_callbacks.get("on_move")     if visualize_callbacks else None
+    on_move = visualize_callbacks.get("on_move") if visualize_callbacks else None
 
-    # ── Sense: reveal neighbors of pos into agent_grid ───────────────────────
-    def sense(pos: Tuple[int, int]):
-        pr, pc = pos
-        agent_grid[pr][pc] = actual_grid[pr][pc]
+    def sense(pos):
+        r, c = pos
+        agent_grid[r][c] = actual_grid[r][c]
         for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:
-            nr, nc = pr + dr, pc + dc
+            nr, nc = r + dr, c + dc
             if 0 <= nr < ROWS and 0 <= nc < ROWS:
                 agent_grid[nr][nc] = actual_grid[nr][nc]
 
-    # ── Neighbors visible to agent (not BLACK in agent_grid) ─────────────────
-    def neighbors(pos: Tuple[int, int]) -> List[Tuple[int, int]]:
+    def neighbors(pos):
         r, c = pos
         out = []
         for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:
             nr, nc = r + dr, c + dc
-            if 0 <= nr < ROWS and 0 <= nc < ROWS and agent_grid[nr][nc] != BLACK:
-                out.append((nr, nc))
+            if 0 <= nr < ROWS and 0 <= nc < ROWS:
+                if agent_grid[nr][nc] != BLACK:
+                    out.append((nr, nc))
         return out
 
-    # ── Neighbors for backward search (uses actual_grid — no GREY blocking) ──
-    def neighbors_actual(pos: Tuple[int, int]) -> List[Tuple[int, int]]:
-        r, c = pos
-        out = []
-        for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:
-            nr, nc = r + dr, c + dc
-            if 0 <= nr < ROWS and 0 <= nc < ROWS and actual_grid[nr][nc] != BLACK:
-                out.append((nr, nc))
-        return out
-
-    # ── Path reconstruction ───────────────────────────────────────────────────
-    def reconstruct(camefrom: Dict, current: Tuple[int, int], target: Tuple[int, int]) -> List[Tuple[int, int]]:
+    def reconstruct(came_from, current):
         path = []
-        while current in camefrom:
+        while current in came_from:
             path.append(current)
-            current = camefrom[current]
+            current = came_from[current]
         path.append(current)
         path.reverse()
         return path
 
-    # ── Single backward A* search ─────────────────────────────────────────────
-    # Searches from GOAL toward AGENT using agent's current position as heuristic target.
-    # Returns a path from agent_pos → goal (reversed after reconstruction).
-    def astar_backward(agent_pos: Tuple[int, int]) -> Optional[List[Tuple[int, int]]]:
+    def backward_astar(agent_pos):
         nonlocal counter
         counter += 1
 
-        h = make_h(agent_pos)  # heuristic toward agent position
-
-        # Initialize goal as search start (backward search starts from goal)
-        goalr, goalc = goal
-        g[goalr][goalc] = 0
-        search[goalr][goalc] = counter
-
-        # Initialize agent pos in search arrays
         ar, ac = agent_pos
-        g[ar][ac] = float("inf")
-        search[ar][ac] = counter
-
-        camefrom: Dict[Tuple[int, int], Tuple[int, int]] = {}
-        closed: set = set()
+        gr, gc = goal
 
         pq = CustomPQ_maxG()
-        pq.put(goal, h[goalr][goalc], 0.0)
+        came_from = {}
+        closed = set()
+
+        g[gr][gc] = 0
+        search[gr][gc] = counter
+
+        h = lambda r, c: abs(r - ar) + abs(c - ac)
+        pq.put(goal, h(gr, gc), 0)
 
         while not pq.is_empty():
-            current, _, _ = pq.get()
-            if current is None:
-                break
-            if current in closed:
+            current, _, g_cur = pq.get()
+            if current is None or current in closed:
                 continue
 
             closed.add(current)
-            if on_expanded:
-                on_expanded(current)
 
-            # Backward search reaches agent position — path found
             if current == agent_pos:
-                path = reconstruct(camefrom, current, goal)
-                return path, len(closed)  # path runs agent_pos → goal
+                path = reconstruct(came_from, current)
+                path.reverse()  # backward search gives goal→agent, we need agent→goal
+                return path, len(closed)
 
             cr, cc = current
-            for nb in neighbors_actual(current):
+            for nb in neighbors(current):
                 nr, nc = nb
-
                 if search[nr][nc] != counter:
                     g[nr][nc] = float("inf")
                     search[nr][nc] = counter
-
                 new_g = g[cr][cc] + 1
                 if new_g < g[nr][nc]:
                     g[nr][nc] = new_g
-                    camefrom[nb] = current
-                    f = new_g + h[nr][nc]
+                    came_from[nb] = current
+                    f = new_g + h(nr, nc)
                     if pq.contains_node(nb):
                         pq.remove(nb)
                     pq.put(nb, f, new_g)
-                    if on_frontier:
-                        on_frontier(nb)
 
-        return None, len(closed)  # no path found
+        return None, len(closed)
 
-    # ── Main agent loop ───────────────────────────────────────────────────────
-    current  = start
+    current = start
     executed = [current]
     total_expanded = 0
-    replans  = 0
+    replans = 0
 
     sense(current)
 
     while current != goal:
-        path, exp = astar_backward(current)
+        path, exp = backward_astar(current)
         replans += 1
         total_expanded += exp
 
         if path is None:
             return False, executed, total_expanded, replans
 
-        # Execute path step by step (path already runs agent → goal)
         for step in path[1:]:
-            nr, nc = step
-
+            r, c = step
             sense(current)
 
-            # Check if next step is actually blocked
-            if actual_grid[nr][nc] == BLACK:
-                agent_grid[nr][nc] = BLACK
-                break  # replan
+            if actual_grid[r][c] == BLACK:
+                agent_grid[r][c] = BLACK
+                break
 
-            # Move
             current = step
             executed.append(current)
-            agent_grid[nr][nc] = PATH
-
+            agent_grid[r][c] = PATH
             if on_move:
                 on_move(current)
 
             sense(current)
-
             if current == goal:
                 return True, executed, total_expanded, replans
 
@@ -332,6 +286,7 @@ def main() -> None:
             actual_maze=mazes[maze_id],
             start=START_NODE,
             goal=END_NODE,
+            tie_breaking="max_g",
         )
         t1 = time.perf_counter()
 
