@@ -104,6 +104,16 @@ def repeated_backward_astar(
                 out.append((nr, nc))
         return out
 
+    # ── Neighbors for backward search (uses actual_grid — no GREY blocking) ──
+    def neighbors_actual(pos: Tuple[int, int]) -> List[Tuple[int, int]]:
+        r, c = pos
+        out = []
+        for dr, dc in [(-1,0),(1,0),(0,-1),(0,1)]:
+            nr, nc = r + dr, c + dc
+            if 0 <= nr < ROWS and 0 <= nc < ROWS and actual_grid[nr][nc] != BLACK:
+                out.append((nr, nc))
+        return out
+
     # ── Path reconstruction ───────────────────────────────────────────────────
     def reconstruct(camefrom: Dict, current: Tuple[int, int], target: Tuple[int, int]) -> List[Tuple[int, int]]:
         path = []
@@ -156,7 +166,7 @@ def repeated_backward_astar(
                 return path, len(closed)  # path runs agent_pos → goal
 
             cr, cc = current
-            for nb in neighbors(current):
+            for nb in neighbors_actual(current):
                 nr, nc = nb
 
                 if search[nr][nc] != counter:
