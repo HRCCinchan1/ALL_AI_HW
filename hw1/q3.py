@@ -36,7 +36,6 @@ from custom_pq import CustomPQ_maxG, CustomPQ_minG
 from q2 import repeated_forward_astar
 
 
-# ---------------- FILE LOADER ----------------
 def readMazes(fname: str) -> List[List[List[int]]]:
     """
     Reads a JSON file containing a list of mazes.
@@ -127,7 +126,7 @@ def repeated_backward_astar(
 
             if current == agent_pos:
                 path = reconstruct(came_from, current)
-                path.reverse()  # backward search gives goal→agent, we need agent→goal
+                path.reverse()  
                 return path, len(closed)
 
             cr, cc = current
@@ -257,7 +256,6 @@ def show_astar_search(win: pygame.Surface, actual_maze: List[List[int]], algo: s
 
     print(f"[{algo}] found={found}  executed_steps={len(executed)-1}  expanded={expanded}  replans={replans}")
 
-    # If 'win' is the display surface (it is), this works:
     pygame.image.save(win, save_path)
     print(f"Saved the visualization -> {save_path}")
 

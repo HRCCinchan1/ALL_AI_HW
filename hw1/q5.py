@@ -66,25 +66,21 @@ def adaptive_astar(
     # TODO: Implement Adaptive A* with max_g tie-braking strategy.
     # Use heapq for standard priority queue implementation and name your max_g heap class as `CustomPQ_maxG` and use it. 
     
-    # ── Setup ────────────────────────────────────────────────────────────────
     actual_grid = [[BLACK if actual_maze[r][c] == 1 else WHITE for c in range(ROWS)] for r in range(ROWS)]
     agent_grid  = [[GREY] * ROWS for _ in range(ROWS)]
 
-    # h[r][c] starts as Manhattan distance to goal, updated after each search
     gr, gc = goal
     h = [[abs(gr - r) + abs(gc - c) for c in range(ROWS)] for r in range(ROWS)]
 
-    # g-values and search counters for lazy reset
     g      = [[float("inf")] * ROWS for _ in range(ROWS)]
     search = [[0] * ROWS for _ in range(ROWS)]
     counter = 0
 
-    # Extract visualization callbacks
     on_frontier = visualize_callbacks.get("on_frontier") if visualize_callbacks else None
     on_expanded = visualize_callbacks.get("on_expanded") if visualize_callbacks else None
     on_move     = visualize_callbacks.get("on_move")     if visualize_callbacks else None
 
-    # ── Sense: reveal neighbors of pos into agent_grid ───────────────────────
+    
     def sense(pos: Tuple[int, int]):
         pr, pc = pos
         agent_grid[pr][pc] = actual_grid[pr][pc]
@@ -93,7 +89,6 @@ def adaptive_astar(
             if 0 <= nr < ROWS and 0 <= nc < ROWS:
                 agent_grid[nr][nc] = actual_grid[nr][nc]
 
-    # ── Neighbors visible to agent (not BLACK in agent_grid) ─────────────────
     def neighbors(pos: Tuple[int, int]) -> List[Tuple[int, int]]:
         r, c = pos
         out = []
@@ -103,7 +98,6 @@ def adaptive_astar(
                 out.append((nr, nc))
         return out
 
-    # ── Path reconstruction ───────────────────────────────────────────────────
     def reconstruct(camefrom: Dict, current: Tuple[int, int]) -> List[Tuple[int, int]]:
         path = []
         while current in camefrom:
@@ -113,8 +107,6 @@ def adaptive_astar(
         path.reverse()
         return path
 
-    # ── Single Adaptive A* search ─────────────────────────────────────────────
-    # Returns (path, closed_set, g_values_at_goal) so we can update h afterward
     def astar_adaptive(start_pos: Tuple[int, int]) -> Tuple[Optional[List], set, float]:
         nonlocal counter
         counter += 1
@@ -168,7 +160,6 @@ def adaptive_astar(
 
         return None, closed, float("inf")
 
-    # ── Main agent loop ───────────────────────────────────────────────────────
     current  = start
     executed = [current]
     total_expanded = 0
@@ -185,21 +176,18 @@ def adaptive_astar(
 
         total_expanded += len(closed_set)
 
-        # ── Adaptive A* h-value update ────────────────────────────────────────
-        # For every expanded state s: h_new(s) = g(goal) - g(s)
-        # This is admissible and >= previous h, so future searches expand fewer nodes
         if goal_g < float("inf"):
             for (er, ec) in closed_set:
                 if search[er][ec] == counter and g[er][ec] < float("inf"):
                     h[er][ec] = goal_g - g[er][ec]
 
-        # Execute path step by step
+        
         for step in path[1:]:
             nr, nc = step
 
             sense(current)
 
-            # Check if next step is actually blocked
+            
             if actual_grid[nr][nc] == BLACK:
                 agent_grid[nr][nc] = BLACK
                 break  # replan
@@ -304,7 +292,6 @@ def show_astar_search(win: pygame.Surface, actual_maze: List[List[int]], algo: s
 
     print(f"[{algo}] found={found}  executed_steps={len(executed)-1}  expanded={expanded}  replans={replans}")
 
-    # If 'win' is the display surface (it is), this works:
     pygame.image.save(win, save_path)
     print(f"Saved the visualization -> {save_path}")
 
