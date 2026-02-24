@@ -62,7 +62,7 @@ def repeated_backward_astar(
     visualize_callbacks: Optional[Dict[str, Callable[[Tuple[int, int]], None]]] = None,
 ) -> Tuple[bool, List[Tuple[int, int]], int, int]:
     
-    # TODO: Implement Backward A* with max_g tie-braking strategy.
+    # # TODO: Implement Backward A* with max_g tie-braking strategy. 
 
     actual_grid = [[BLACK if actual_maze[r][c] == 1 else WHITE for c in range(ROWS)] for r in range(ROWS)]
     agent_grid = [[GREY] * ROWS for _ in range(ROWS)]
@@ -146,7 +146,7 @@ def repeated_backward_astar(
 
         return None, len(closed)
 
-    current = start
+    current = start #Start 
     executed = [current]
     total_expanded = 0
     replans = 0
@@ -167,30 +167,23 @@ def repeated_backward_astar(
 
             if actual_grid[r][c] == BLACK:
                 agent_grid[r][c] = BLACK
-                break
+                break #replan 
 
             current = step
             executed.append(current)
-            agent_grid[r][c] = PATH
+            agent_grid[r][c] = PATH #Move 
             if on_move:
                 on_move(current)
 
             sense(current)
-            if current == goal:
+            if current == goal: #Reached goal 
                 return True, executed, total_expanded, replans
 
     return True, executed, total_expanded, replans
 
 def show_astar_search(win: pygame.Surface, actual_maze: List[List[int]], algo: str, fps: int = 240, step_delay_ms: int = 0, save_path: Optional[str] = None) -> None:
     # [BONUS] TODO: Place your visualization code here.
-    # This function should display the maze used, the agent's knowledge, and the search process as the agent plans and executes.
-    # As a reference, this function takes pygame Surface 'win' to draw on, the actual maze grid, the algorithm name for labeling, 
-    # and optional parameters for controlling the visualization speed and saving a screenshot.
-    # You are free to use other visualization libraries other than pygame. 
-    # You can call repeated_forward_astar with visualize_callbacks that update the Pygame display as the agent plans and executes.
-    # In the end it should store the visualization as a PNG file if save_path is provided, or default to "vis_{algo}.png".
-    # print(f"[{algo}] found={found}  executed_steps={len(executed)-1}  expanded={expanded}  replans={replans}")
-
+    
     if save_path is None:
         save_path = f"vis_{algo}.png"
 
@@ -206,6 +199,8 @@ def show_astar_search(win: pygame.Surface, actual_maze: List[List[int]], algo: s
                 true_color = BLACK if actual_maze[r][c] == 1 else WHITE
                 pygame.draw.rect(win, true_color, (c * n, r * n, n, n))
                 pygame.draw.rect(win, agent_grid[r][c], (GRID_LENGTH + GAP + c * n, r * n, n, n))
+        
+        # Start, Goal, and Current Agent position 
         sr, sc = START_NODE
         pygame.draw.rect(win, YELLOW, (sc * n, sr * n, n, n))
         pygame.draw.rect(win, YELLOW, (GRID_LENGTH + GAP + sc * n, sr * n, n, n))
@@ -255,9 +250,9 @@ def show_astar_search(win: pygame.Surface, actual_maze: List[List[int]], algo: s
     pygame.display.flip()
 
     print(f"[{algo}] found={found}  executed_steps={len(executed)-1}  expanded={expanded}  replans={replans}")
-
+    # Win
     pygame.image.save(win, save_path)
-    print(f"Saved the visualization -> {save_path}")
+    print(f"Saved the visualization -> {save_path}") #Saved Paths 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Q3: Repeated Backward A*")

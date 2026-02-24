@@ -58,14 +58,11 @@ def repeated_forward_astar(
     actual_maze: List[List[int]],
     start: Tuple[int, int] = START_NODE,
     goal: Tuple[int, int] = END_NODE,
-    tie_breaking: str = "max_g", # "min_g"
+    tie_breaking: str = "max_g", 
     visualize_callbacks: Optional[Dict[str, Callable[[Tuple[int, int]], None]]] = None,
 ) -> Tuple[bool, List[Tuple[int, int]], int, int]:
     
-    # TODO: Implement Repeated Forward A* with min_g & max_g tie-braking strategies.
-    # Use heapq for standard priority queue implementation and name your max_g heap class as `CustomPQ_maxG` 
-    # and min_g heap class as `CustomPQ_minG`. Place them inside `custom_pq.py` file (see import statement in line 41).
-    # and use it.
+    # TODO: Implement Repeated Forward A* with min_g & max_g tie-brakin
 
     import sys
     sys.modules[__name__].__dict__["time"] = sys.modules["time"]
@@ -78,19 +75,15 @@ def repeated_forward_astar(
     # (BLACK=blocked, WHITE=free)
     actual_grid = [[BLACK if actual_maze[r][c] == 1 else WHITE for c in range(ROWS)] for r in range(ROWS)]
 
-    # the agent knows (GREY=unknown, BLACK=blocked, WHITE=free)
     agent_grid = [[GREY] * ROWS for _ in range(ROWS)]
 
-    # Heuristic: precomputed Manhattan distances to goal
     gr, gc = goal
     h = [[abs(gr - r) + abs(gc - c) for c in range(ROWS)] for r in range(ROWS)]
-
-    
     g = [[float("inf")] * ROWS for _ in range(ROWS)]
     search = [[0] * ROWS for _ in range(ROWS)]
     counter = 0
 
-    
+    # (Visulizations)
     on_frontier = visualize_callbacks.get("on_frontier") if visualize_callbacks else None
     on_expanded = visualize_callbacks.get("on_expanded") if visualize_callbacks else None
     on_move     = visualize_callbacks.get("on_move")     if visualize_callbacks else None
@@ -136,7 +129,7 @@ def repeated_forward_astar(
         camefrom: Dict[Tuple[int, int], Tuple[int, int]] = {}
         closed: set = set()
 
-        
+        # (Based on custom_pq.py)
         pq = CustomPQ_maxG() if tie_breaking == "max_g" else CustomPQ_minG()
         pq.put(start_pos, h[sr][sc], 0.0)
 
@@ -175,7 +168,7 @@ def repeated_forward_astar(
 
         return None, len(closed)  
 
-    current = start
+    current = start # Start 
     executed = [current]
     total_expanded = 0
     replans = 0
@@ -190,18 +183,15 @@ def repeated_forward_astar(
         if path is None:
             return False, executed, total_expanded, replans
 
-     
         for step in path[1:]:
             nr, nc = step
 
             sense(current)
 
-            
             if actual_grid[nr][nc] == BLACK:
                 agent_grid[nr][nc] = BLACK
                 break  # replan
 
-            
             current = step
             executed.append(current)
             agent_grid[nr][nc] = PATH # Move
@@ -211,20 +201,13 @@ def repeated_forward_astar(
 
             sense(current)
 
-            if current == goal:
+            if current == goal: #Reached goal 
                 return True, executed, total_expanded, replans
 
     return True, executed, total_expanded, replans
 
 def show_astar_search(win: pygame.Surface, actual_maze: List[List[int]], algo: str, fps: int = 240, step_delay_ms: int = 0, save_path: Optional[str] = None) -> None:
     # [BONUS] TODO: Place your visualization code here.
-    # This function should display the maze used, the agent's knowledge, and the search process as the agent plans and executes.
-    # As a reference, this function takes pygame Surface 'win' to draw on, the actual maze grid, the algorithm name for labeling, 
-    # and optional parameters for controlling the visualization speed and saving a screenshot.
-    # You are free to use other visualization libraries other than pygame. 
-    # You can call repeated_forward_astar with visualize_callbacks that update the Pygame display as the agent plans and executes.
-    # In the end it should store the visualization as a PNG file if save_path is provided, or default to "vis_{algo}.png".
-    # print(f"[{algo}] found={found}  executed_steps={len(executed)-1}  expanded={expanded}  replans={replans}")
     
     if save_path is None:
         save_path = f"vis_{algo}.png"
@@ -241,15 +224,16 @@ def show_astar_search(win: pygame.Surface, actual_maze: List[List[int]], algo: s
                 true_color = BLACK if actual_maze[r][c] == 1 else WHITE
                 pygame.draw.rect(win, true_color, (c * n, r * n, n, n))
                 pygame.draw.rect(win, agent_grid[r][c], (GRID_LENGTH + GAP + c * n, r * n, n, n))
-        # Start 
+        
+        # Start, Goal, and Current Agent position 
         sr, sc = START_NODE
         pygame.draw.rect(win, YELLOW, (sc * n, sr * n, n, n))
         pygame.draw.rect(win, YELLOW, (GRID_LENGTH + GAP + sc * n, sr * n, n, n))
-        # Goal 
+
         gr, gc = END_NODE
         pygame.draw.rect(win, BLUE, (gc * n, gr * n, n, n))
         pygame.draw.rect(win, BLUE, (GRID_LENGTH + GAP + gc * n, gr * n, n, n))
-        # Current Agent position 
+        
         ar, ac = agent_pos[0]
         pygame.draw.rect(win, YELLOW, (GRID_LENGTH + GAP + ac * n, ar * n, n, n))
 
@@ -293,8 +277,9 @@ def show_astar_search(win: pygame.Surface, actual_maze: List[List[int]], algo: s
     draw_both_panes()
     pygame.display.flip()
     print(f"[{algo}] found={found}  executed_steps={len(executed)-1}  expanded={expanded}  replans={replans}")
+    # Win
     pygame.image.save(win, save_path)
-    print(f"Saved the visualization -> {save_path}")
+    print(f"Saved the visualization -> {save_path}") #Saved paths 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Q2: Repeated Forward A*")

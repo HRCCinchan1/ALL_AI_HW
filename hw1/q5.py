@@ -37,7 +37,6 @@ from constants import ROWS, START_NODE, END_NODE, BLACK, WHITE, GREY, YELLOW, BL
 from custom_pq import CustomPQ_maxG
 
 
-# ---------------- FILE LOADER ----------------
 def readMazes(fname: str) -> List[List[List[int]]]:
     """
     Reads a JSON file containing a list of mazes.
@@ -64,18 +63,17 @@ def adaptive_astar(
 ) -> Tuple[bool, List[Tuple[int, int]], int, int]:
     
     # TODO: Implement Adaptive A* with max_g tie-braking strategy.
-    # Use heapq for standard priority queue implementation and name your max_g heap class as `CustomPQ_maxG` and use it. 
-    
+
     actual_grid = [[BLACK if actual_maze[r][c] == 1 else WHITE for c in range(ROWS)] for r in range(ROWS)]
     agent_grid  = [[GREY] * ROWS for _ in range(ROWS)]
 
     gr, gc = goal
     h = [[abs(gr - r) + abs(gc - c) for c in range(ROWS)] for r in range(ROWS)]
-
     g      = [[float("inf")] * ROWS for _ in range(ROWS)]
     search = [[0] * ROWS for _ in range(ROWS)]
     counter = 0
 
+    # (Visulizations)
     on_frontier = visualize_callbacks.get("on_frontier") if visualize_callbacks else None
     on_expanded = visualize_callbacks.get("on_expanded") if visualize_callbacks else None
     on_move     = visualize_callbacks.get("on_move")     if visualize_callbacks else None
@@ -122,6 +120,7 @@ def adaptive_astar(
         camefrom: Dict[Tuple[int, int], Tuple[int, int]] = {}
         closed: set = set()
 
+        # (Based on custom_pq.py)
         pq = CustomPQ_maxG()
         pq.put(start_pos, h[sr][sc], 0.0)
 
@@ -160,7 +159,7 @@ def adaptive_astar(
 
         return None, closed, float("inf")
 
-    current  = start
+    current  = start #Start
     executed = [current]
     total_expanded = 0
     replans  = 0
@@ -192,30 +191,23 @@ def adaptive_astar(
                 agent_grid[nr][nc] = BLACK
                 break  # replan
 
-            # Move
+            
             current = step
             executed.append(current)
-            agent_grid[nr][nc] = PATH
+            agent_grid[nr][nc] = PATH  #Move
 
             if on_move:
                 on_move(current)
 
             sense(current)
 
-            if current == goal:
+            if current == goal: #Reached goal 
                 return True, executed, total_expanded, replans
 
     return True, executed, total_expanded, replans
 
 def show_astar_search(win: pygame.Surface, actual_maze: List[List[int]], algo: str, fps: int = 240, step_delay_ms: int = 0, save_path: Optional[str] = None) -> None:
     # [BONUS] TODO: Place your visualization code here.
-    # This function should display the maze used, the agent's knowledge, and the search process as the agent plans and executes.
-    # As a reference, this function takes pygame Surface 'win' to draw on, the actual maze grid, the algorithm name for labeling, 
-    # and optional parameters for controlling the visualization speed and saving a screenshot.
-    # You are free to use other visualization libraries other than pygame. 
-    # You can call repeated_backward_astar with visualize_callbacks that update the Pygame display as the agent plans and executes.
-    # In the end it should store the visualization as a PNG file if save_path is provided, or default to "vis_{algo}.png".
-    # print(f"[{algo}] found={found}  executed_steps={len(executed)-1}  expanded={expanded}  replans={replans}")
 
     if save_path is None:
         save_path = f"vis_{algo}.png"
@@ -232,6 +224,8 @@ def show_astar_search(win: pygame.Surface, actual_maze: List[List[int]], algo: s
                 true_color = BLACK if actual_maze[r][c] == 1 else WHITE
                 pygame.draw.rect(win, true_color, (c * n, r * n, n, n))
                 pygame.draw.rect(win, agent_grid[r][c], (GRID_LENGTH + GAP + c * n, r * n, n, n))
+        
+        # Start, Goal, and Current Agent Position 
         sr, sc = START_NODE
         pygame.draw.rect(win, YELLOW, (sc * n, sr * n, n, n))
         pygame.draw.rect(win, YELLOW, (GRID_LENGTH + GAP + sc * n, sr * n, n, n))
@@ -270,7 +264,7 @@ def show_astar_search(win: pygame.Surface, actual_maze: List[List[int]], algo: s
         agent_grid[r][c] = PATH
         refresh()
 
-    # Run the appropriate algorithm based on algo label
+    # Run the correct algorithm based on label
     if algo == "adaptive":
         found, executed, expanded, replans = adaptive_astar(
             actual_maze=actual_maze,
@@ -291,9 +285,9 @@ def show_astar_search(win: pygame.Surface, actual_maze: List[List[int]], algo: s
     pygame.display.flip()
 
     print(f"[{algo}] found={found}  executed_steps={len(executed)-1}  expanded={expanded}  replans={replans}")
-
+    #wWin
     pygame.image.save(win, save_path)
-    print(f"Saved the visualization -> {save_path}")
+    print(f"Saved the visualization -> {save_path}") #Saved paths 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Q5: Adaptive A*")

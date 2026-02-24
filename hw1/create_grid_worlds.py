@@ -17,6 +17,7 @@ random.seed(42)
 
 def create_maze() -> list:
     # TODO: Implement this function to generate and return a random maze as a 2D list of 0s and 1s.
+    
     size = ROWS
     grid = [[-1] * size for _ in range(size)]
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
@@ -48,7 +49,7 @@ def create_maze() -> list:
         else:
             stack.pop()
 
-    # Any unvisited cell defaults to FREE
+    
     for r in range(size):
         for c in range(size):
             if grid[r][c] == -1:

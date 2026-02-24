@@ -1,8 +1,7 @@
 """
-custom_pq.py — Custom Priority Queue implementations for A* tie-breaking.
-
-CustomPQ_maxG : breaks ties in favor of LARGER g-values (more focused search)
-CustomPQ_minG : breaks ties in favor of SMALLER g-values
+custom_pq.py — Custom Priority Queue Implements for A* tie-breaking
+CustomPQ_maxG : breaks ties in favor of max g-values 
+CustomPQ_minG : breaks ties in favor of min g-values
 """
 
 import heapq
@@ -10,10 +9,6 @@ from typing import Tuple
 
 
 class CustomPQ_maxG:
-    """
-    Min-heap priority queue that breaks f-value ties in favor of LARGER g-values.
-    Heap key: (f, -g, counter)
-    """
 
     def __init__(self):
         self._heap = []
@@ -26,7 +21,6 @@ class CustomPQ_maxG:
         self._node_set.add(node)
 
     def get(self) -> Tuple[Tuple[int, int], float, float]:
-        """Returns (node, f, g)"""
         while self._heap:
             f, neg_g, _, node = heapq.heappop(self._heap)
             if node in self._node_set:
@@ -38,7 +32,6 @@ class CustomPQ_maxG:
         return node in self._node_set
 
     def remove(self, node: Tuple[int, int]):
-        """Lazy removal — mark as removed from set, will be skipped on get()."""
         self._node_set.discard(node)
 
     def is_empty(self) -> bool:
@@ -46,11 +39,7 @@ class CustomPQ_maxG:
 
 
 class CustomPQ_minG:
-    """
-    Min-heap priority queue that breaks f-value ties in favor of SMALLER g-values.
-    Heap key: (f, +g, counter)
-    """
-
+    
     def __init__(self):
         self._heap = []
         self._counter = 0
@@ -62,7 +51,6 @@ class CustomPQ_minG:
         self._node_set.add(node)
 
     def get(self) -> Tuple[Tuple[int, int], float, float]:
-        """Returns (node, f, g)"""
         while self._heap:
             f, g, _, node = heapq.heappop(self._heap)
             if node in self._node_set:
@@ -74,7 +62,6 @@ class CustomPQ_minG:
         return node in self._node_set
 
     def remove(self, node: Tuple[int, int]):
-        """Lazy removal — mark as removed from set, will be skipped on get()."""
         self._node_set.discard(node)
 
     def is_empty(self) -> bool:
