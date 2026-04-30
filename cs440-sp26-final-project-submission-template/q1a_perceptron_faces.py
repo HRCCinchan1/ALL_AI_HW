@@ -73,12 +73,12 @@ class PerceptronFacesClassifier:
 
 
 def main(training_percent: int, num_iterations: int = 5) -> dict:
-     """Run the standard train/test pipeline for the face perceptron.
+    """Run the standard train/test pipeline for the face perceptron.
 
     See `perceptron_digits.main` for protocol details. This variant
     uses the face dataset and the binary `PerceptronFacesClassifier`.
     """
-    
+
     training_images, training_labels = load_faces("train")
     test_images, test_labels = load_faces("test")
 
