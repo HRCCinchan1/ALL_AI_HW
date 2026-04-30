@@ -23,12 +23,34 @@ from util_faces import load_faces
 
 
 class PerceptronFacesClassifier:
+    """Binary perceptron: predicts 1 for face, 0 for not a face.
+
+    Implementation notes:
+      * Keep a single weight matrix and a bias scalar.
+      * For image x, compute `s = w . x + b` and predict 1 if s >= 0
+        else 0.
+      * On a mistake, update w and b in the direction that would have
+        corrected the prediction.
+    """
     def __init__(self, image_shape=(70, 60), max_iterations: int = 3):
+        """Initialise weights and bias.
+
+        `image_shape` is (rows, cols) for each input image.
+        `max_iterations` is the number of full passes over the training
+        set during `train`.
+        """
+        # TODO: initialize self.weights (shape: rows x cols) and self.bias.
         self.max_iterations = max_iterations
         self.weights = np.zeros(image_shape)
         self.bias = 0.0
 
     def train(self, training_images: np.ndarray, training_labels: np.ndarray) -> None:
+        """Fit the perceptron on training data.
+
+        `training_images` has shape (N, 70, 60). `training_labels` has
+        shape (N,) with values in {0, 1}.
+        """
+        # TODO: implement the binary perceptron update rule.
         for _ in range(self.max_iterations):
             for img, label in zip(training_images, training_labels):
                 pred = self.predict(img)
@@ -38,15 +60,25 @@ class PerceptronFacesClassifier:
                     self.bias += error
 
     def predict(self, image: np.ndarray) -> int:
+        """Predict 0 or 1 for a single 70x60 image."""
+        # TODO: return 1 if w . x + b >= 0 else 0.
         score = np.dot(self.weights.ravel(), image.ravel()) + self.bias
         return 1 if score >= 0 else 0
 
     def evaluate(self, images: np.ndarray, labels: np.ndarray) -> float:
+        """Return classification accuracy in [0, 1] over a batch."""
+        # TODO: loop over images, call self.predict, compare with labels.
         correct = sum(self.predict(img) == lbl for img, lbl in zip(images, labels))
         return correct / len(labels)
 
 
 def main(training_percent: int, num_iterations: int = 5) -> dict:
+     """Run the standard train/test pipeline for the face perceptron.
+
+    See `perceptron_digits.main` for protocol details. This variant
+    uses the face dataset and the binary `PerceptronFacesClassifier`.
+    """
+    
     training_images, training_labels = load_faces("train")
     test_images, test_labels = load_faces("test")
 
@@ -62,6 +94,7 @@ def main(training_percent: int, num_iterations: int = 5) -> dict:
         start = time.time()
         clf.train(training_images[idx], training_labels[idx])
         train_times[i] = time.time() - start
+
         accuracies[i] = clf.evaluate(test_images, test_labels)
 
     errors = 1.0 - accuracies
@@ -73,6 +106,7 @@ def main(training_percent: int, num_iterations: int = 5) -> dict:
         "mean_accuracy": float(np.mean(accuracies)),
         "std_accuracy": float(np.std(accuracies)),
     }
+
     print(f"\n=== Perceptron | Faces | {training_percent}% of training data ===")
     print(f"Mean training time: {results['mean_train_time']:.3f} s")
     print(f"Mean accuracy:      {results['mean_accuracy']*100:.2f}%")
