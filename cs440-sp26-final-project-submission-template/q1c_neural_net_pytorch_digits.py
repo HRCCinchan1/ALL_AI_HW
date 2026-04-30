@@ -25,76 +25,62 @@ try:
     import torch.optim as optim
     from torch.utils.data import DataLoader, TensorDataset
 except ImportError as exc:
-    raise ImportError(
-        "PyTorch is required for this file. Install with `pip install torch`."
-    ) from exc
+    raise ImportError("PyTorch is required. Install with `pip install torch`.") from exc
 
 from util_digits import load_digits, flatten_images
 
 
 class PyTorchNeuralNetworkDigits(nn.Module):
-    """Three layer MLP: 784 to hidden1 to hidden2 to 10."""
-
-    def __init__(self, input_size: int = 28 * 28,
-                 hidden1_size: int = 128,
-                 hidden2_size: int = 64,
-                 output_size: int = 10):
-        """Construct `nn.Linear` and activation modules for each layer."""
+    def __init__(self, input_size=784, hidden1_size=128, hidden2_size=64, output_size=10):
         super().__init__()
-        # TODO: define self.fc1, self.fc2, self.fc3 and an activation.
-        raise NotImplementedError
+        self.fc1 = nn.Linear(input_size, hidden1_size)
+        self.fc2 = nn.Linear(hidden1_size, hidden2_size)
+        self.fc3 = nn.Linear(hidden2_size, output_size)
+        self.act = nn.ReLU()
 
-    def forward(self, x: "torch.Tensor") -> "torch.Tensor":
-        """Forward pass returning raw logits of shape (N, 10)."""
-        # TODO: return self.fc3(act(self.fc2(act(self.fc1(x)))))
-        raise NotImplementedError
+    def forward(self, x):
+        return self.fc3(self.act(self.fc2(self.act(self.fc1(x)))))
 
 
 class PyTorchDigitsClassifier:
-    """Thin wrapper that drives training and prediction for the module."""
+    def __init__(self, hidden1_size=128, hidden2_size=64, learning_rate=1e-3,
+                 num_epochs=20, batch_size=32, device=None):
+        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = PyTorchNeuralNetworkDigits(hidden1_size=hidden1_size,
+                                                hidden2_size=hidden2_size).to(self.device)
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+        self.num_epochs = num_epochs
+        self.batch_size = batch_size
 
-    def __init__(
-        self,
-        hidden1_size: int = 128,
-        hidden2_size: int = 64,
-        learning_rate: float = 1e-3,
-        num_epochs: int = 20,
-        batch_size: int = 32,
-        device: str | None = None,
-    ):
-        """Build the module, the loss, and the optimiser."""
-        # TODO:
-        # self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        # self.model = PyTorchNeuralNetworkDigits(...).to(self.device)
-        # self.criterion = nn.CrossEntropyLoss()
-        # self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
-        # Store epoch and batch size.
-        raise NotImplementedError
+    def train(self, training_images, training_labels):
+        X = torch.tensor(flatten_images(training_images), dtype=torch.float32)
+        y = torch.tensor(training_labels, dtype=torch.long)
+        loader = DataLoader(TensorDataset(X, y), batch_size=self.batch_size, shuffle=True)
+        self.model.train()
+        for _ in range(self.num_epochs):
+            for Xb, yb in loader:
+                Xb, yb = Xb.to(self.device), yb.to(self.device)
+                self.optimizer.zero_grad()
+                loss = self.criterion(self.model(Xb), yb)
+                loss.backward()
+                self.optimizer.step()
 
-    def train(self, training_images: np.ndarray, training_labels: np.ndarray) -> None:
-        """Fit the PyTorch model on the provided training data.
+    def predict(self, image):
+        self.model.eval()
+        with torch.no_grad():
+            x = torch.tensor(image.ravel(), dtype=torch.float32).unsqueeze(0).to(self.device)
+            return int(self.model(x).argmax(dim=1).item())
 
-        `training_images` has shape (N, 28, 28). `training_labels` has
-        shape (N,) with integer class labels.
-        """
-        # TODO: convert numpy to tensors, build a DataLoader with
-        # self.batch_size, then run self.num_epochs epochs of
-        # forward, backward, optimizer.step().
-        raise NotImplementedError
-
-    def predict(self, image: np.ndarray) -> int:
-        """Predict a single label in {0..9} for a 28x28 image."""
-        # TODO: flatten, tensor, forward, argmax, return int.
-        raise NotImplementedError
-
-    def evaluate(self, images: np.ndarray, labels: np.ndarray) -> float:
-        """Return classification accuracy on a batch of images."""
-        # TODO: vectorised eval in torch.no_grad() mode.
-        raise NotImplementedError
+    def evaluate(self, images, labels):
+        self.model.eval()
+        with torch.no_grad():
+            X = torch.tensor(flatten_images(images), dtype=torch.float32).to(self.device)
+            preds = self.model(X).argmax(dim=1).cpu().numpy()
+        return float(np.mean(preds == labels))
 
 
 def main(training_percent: int, num_iterations: int = 5) -> dict:
-    """Run the standard train/test pipeline for the PyTorch NN on digits."""
     training_images, training_labels = load_digits("training")
     test_images, test_labels = load_digits("test")
 
@@ -106,14 +92,10 @@ def main(training_percent: int, num_iterations: int = 5) -> dict:
 
     for i in range(num_iterations):
         idx = np.random.choice(num_total, size=sample_size, replace=False)
-        x_sample = training_images[idx]
-        y_sample = training_labels[idx]
-
         clf = PyTorchDigitsClassifier()
         start = time.time()
-        clf.train(x_sample, y_sample)
+        clf.train(training_images[idx], training_labels[idx])
         train_times[i] = time.time() - start
-
         accuracies[i] = clf.evaluate(test_images, test_labels)
 
     errors = 1.0 - accuracies
@@ -125,7 +107,6 @@ def main(training_percent: int, num_iterations: int = 5) -> dict:
         "mean_accuracy": float(np.mean(accuracies)),
         "std_accuracy": float(np.std(accuracies)),
     }
-
     print(f"\n=== PyTorch NN | Digits | {training_percent}% of training data ===")
     print(f"Mean training time: {results['mean_train_time']:.3f} s")
     print(f"Mean accuracy:      {results['mean_accuracy']*100:.2f}%")
