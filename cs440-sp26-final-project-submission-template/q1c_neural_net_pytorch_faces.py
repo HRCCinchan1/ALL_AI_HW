@@ -31,29 +31,47 @@ from util_faces import load_faces, flatten_images
 
 
 class PyTorchNeuralNetworkFaces(nn.Module):
+    """Three layer MLP: 4200 to hidden1 to hidden2 to 2 (face, not face)."""
+
     def __init__(self, input_size=70*60, hidden1_size=128, hidden2_size=64, output_size=2):
+        """Construct `nn.Linear` and activation modules for each layer."""
         super().__init__()
+        # TODO: define self.fc1, self.fc2, self.fc3 and an activation.
+
         self.fc1 = nn.Linear(input_size, hidden1_size)
         self.fc2 = nn.Linear(hidden1_size, hidden2_size)
         self.fc3 = nn.Linear(hidden2_size, output_size)
         self.act = nn.ReLU()
 
     def forward(self, x):
+        """Forward pass returning raw logits of shape (N, 2)."""
+        # TODO: return self.fc3(act(self.fc2(act(self.fc1(x)))))
         return self.fc3(self.act(self.fc2(self.act(self.fc1(x)))))
 
 
 class PyTorchFacesClassifier:
+    """Thin wrapper that drives training and prediction for the module."""
+
     def __init__(self, hidden1_size=128, hidden2_size=64, learning_rate=1e-3,
                  num_epochs=20, batch_size=32, device=None):
+        """Build the module, the loss, and the optimiser."""
+        # TODO:
+        # self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        # self.model = PyTorchNeuralNetworkFaces(...).to(self.device)
+        # self.criterion = nn.CrossEntropyLoss()
+        # self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
+
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = PyTorchNeuralNetworkFaces(hidden1_size=hidden1_size,
-                                               hidden2_size=hidden2_size).to(self.device)
+        self.model = PyTorchNeuralNetworkFaces(hidden1_size=hidden1_size,hidden2_size=hidden2_size).to(self.device)
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.Adam(self.model.parameters(), lr=learning_rate)
         self.num_epochs = num_epochs
         self.batch_size = batch_size
 
     def train(self, training_images, training_labels):
+        """Fit the PyTorch model on the provided training data."""
+        # TODO: convert numpy to tensors, DataLoader, loop over epochs.
+
         X = torch.tensor(flatten_images(training_images), dtype=torch.float32)
         y = torch.tensor(training_labels, dtype=torch.long)
         loader = DataLoader(TensorDataset(X, y), batch_size=self.batch_size, shuffle=True)
@@ -67,12 +85,18 @@ class PyTorchFacesClassifier:
                 self.optimizer.step()
 
     def predict(self, image):
+        """Predict 0 or 1 for a single 70x60 image."""
+        # TODO: flatten, tensor, forward, argmax, return int.
+
         self.model.eval()
         with torch.no_grad():
             x = torch.tensor(image.ravel(), dtype=torch.float32).unsqueeze(0).to(self.device)
             return int(self.model(x).argmax(dim=1).item())
 
     def evaluate(self, images, labels):
+        """Return classification accuracy on a batch of images."""
+        # TODO: vectorised eval in torch.no_grad() mode.
+
         self.model.eval()
         with torch.no_grad():
             X = torch.tensor(flatten_images(images), dtype=torch.float32).to(self.device)
@@ -81,6 +105,7 @@ class PyTorchFacesClassifier:
 
 
 def main(training_percent: int, num_iterations: int = 5) -> dict:
+    """Run the standard train/test pipeline for the PyTorch NN on faces."""
     training_images, training_labels = load_faces("train")
     test_images, test_labels = load_faces("test")
 
@@ -92,9 +117,12 @@ def main(training_percent: int, num_iterations: int = 5) -> dict:
 
     for i in range(num_iterations):
         idx = np.random.choice(num_total, size=sample_size, replace=False)
+        x_sample = training_images[idx]
+        y_sample = training_labels[idx]
+
         clf = PyTorchFacesClassifier()
         start = time.time()
-        clf.train(training_images[idx], training_labels[idx])
+        clf.train(x_sample, y_sample)
         train_times[i] = time.time() - start
         accuracies[i] = clf.evaluate(test_images, test_labels)
 
