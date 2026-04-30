@@ -32,7 +32,7 @@ class PerceptronDigitsClassifier:
         penalize the mispredicted class weights.
       * Iterate over the training set `max_iterations` times.
     """
-
+    
     def __init__(self, num_classes: int = 10, image_shape=(28, 28), max_iterations: int = 3):
         """Initialise weights and biases.
 
@@ -74,7 +74,7 @@ class PerceptronDigitsClassifier:
     def predict(self, image: np.ndarray) -> int:
         """Predict a label in {0..9} for a single 28x28 image."""
         # TODO: compute w_y . x + b_y for every class and return argmax.
-
+        
         x = image.ravel()
         scores = self.weights @ x + self.biases
         return int(np.argmax(scores))
@@ -100,7 +100,7 @@ def main(training_percent: int, num_iterations: int = 5) -> dict:
     Returns a dict with keys `training_percent`, `mean_train_time`,
     `mean_error`, `std_error`, `mean_accuracy`, `std_accuracy`.
     """
-
+    
     training_images, training_labels = load_digits("training")
     test_images, test_labels = load_digits("test")
 
@@ -112,10 +112,14 @@ def main(training_percent: int, num_iterations: int = 5) -> dict:
 
     for i in range(num_iterations):
         idx = np.random.choice(num_total, size=sample_size, replace=False)
+        x_sample = training_images[idx]
+        y_sample = training_labels[idx]
+
         clf = PerceptronDigitsClassifier()
         start = time.time()
-        clf.train(training_images[idx], training_labels[idx])
+        clf.train(x_sample, y_sample)
         train_times[i] = time.time() - start
+
         accuracies[i] = clf.evaluate(test_images, test_labels)
 
     errors = 1.0 - accuracies

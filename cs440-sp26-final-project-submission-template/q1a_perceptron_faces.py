@@ -55,7 +55,7 @@ class PerceptronFacesClassifier:
             for img, label in zip(training_images, training_labels):
                 pred = self.predict(img)
                 if pred != label:
-                    error = label - pred  # +1 or -1
+                    error = label - pred  
                     self.weights += error * img
                     self.bias += error
 
@@ -69,8 +69,8 @@ class PerceptronFacesClassifier:
         """Return classification accuracy in [0, 1] over a batch."""
         # TODO: loop over images, call self.predict, compare with labels.
         correct = sum(self.predict(img) == lbl for img, lbl in zip(images, labels))
-        return correct / len(labels)
-
+        classifAcc = correct / len(labels)
+        return classifAcc
 
 def main(training_percent: int, num_iterations: int = 5) -> dict:
     """Run the standard train/test pipeline for the face perceptron.
@@ -90,9 +90,12 @@ def main(training_percent: int, num_iterations: int = 5) -> dict:
 
     for i in range(num_iterations):
         idx = np.random.choice(num_total, size=sample_size, replace=False)
+        x_sample = training_images[idx]
+        y_sample = training_labels[idx]
+
         clf = PerceptronFacesClassifier()
         start = time.time()
-        clf.train(training_images[idx], training_labels[idx])
+        clf.train(x_sample, y_sample)
         train_times[i] = time.time() - start
 
         accuracies[i] = clf.evaluate(test_images, test_labels)

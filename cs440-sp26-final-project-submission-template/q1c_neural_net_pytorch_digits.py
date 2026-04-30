@@ -25,14 +25,15 @@ try:
     import torch.optim as optim
     from torch.utils.data import DataLoader, TensorDataset
 except ImportError as exc:
-    raise ImportError("PyTorch is required. Install with `pip install torch`.") from exc
-
+    raise ImportError("PyTorch is required. Install with `pip install torch`."
+    ) from exc
 from util_digits import load_digits, flatten_images
 
 
 class PyTorchNeuralNetworkDigits(nn.Module):
     """Three layer MLP: 784 to hidden1 to hidden2 to 10."""
-    def __init__(self, input_size=784, hidden1_size=128, hidden2_size=64, output_size=10):
+
+    def __init__(self, input_size=28*28, hidden1_size=128, hidden2_size=64, output_size=10):
         """Construct `nn.Linear` and activation modules for each layer."""
         super().__init__()
         # TODO: define self.fc1, self.fc2, self.fc3 and an activation.
@@ -52,7 +53,7 @@ class PyTorchDigitsClassifier:
     """Thin wrapper that drives training and prediction for the module."""
 
     def __init__(self, hidden1_size=128, hidden2_size=64, learning_rate=1e-3,
-                 num_epochs=20, batch_size=32, device=None):
+                 num_epochs=20, batch_size=32, device: str | None = None,):
         """Build the module, the loss, and the optimiser."""
         # TODO:
         # self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")

@@ -23,7 +23,7 @@ import numpy as np
 
 from util_digits import load_digits, flatten_images
 
-
+# Functions used to build network 
 def relu(z):
     return np.maximum(0, z)
 
@@ -54,7 +54,7 @@ class ScratchNeuralNetworkDigits:
 
     def __init__(self, input_size=784, hidden1_size=128, hidden2_size=64,
                  output_size=10, learning_rate=0.01, num_epochs=20,
-                 batch_size=32, seed=None):
+                 batch_size=32, seed: int | None = None):
         """Initialise network hyperparameters and weight matrices."""
         # TODO: initialize self.W1, self.b1, self.W2, self.b2, self.W3,
         # self.b3 and store the hyperparameters.
@@ -79,6 +79,10 @@ class ScratchNeuralNetworkDigits:
         `backward` consistent with your choice.
         """
         # TODO:
+        # z1 = X W1 + b1 ; a1 = activation(z1)
+        # z2 = a1 W2 + b2 ; a2 = activation(z2)
+        # z3 = a2 W3 + b3 ; y_hat = softmax(z3)
+        # Cache intermediates (e.g. self.cache) for the backward pass.
 
         z1 = X @ self.W1 + self.b1
         a1 = relu(z1)

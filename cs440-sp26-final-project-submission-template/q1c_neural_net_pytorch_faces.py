@@ -53,7 +53,7 @@ class PyTorchFacesClassifier:
     """Thin wrapper that drives training and prediction for the module."""
 
     def __init__(self, hidden1_size=128, hidden2_size=64, learning_rate=1e-3,
-                 num_epochs=20, batch_size=32, device=None):
+                 num_epochs=20, batch_size=32, device: str | None = None):
         """Build the module, the loss, and the optimiser."""
         # TODO:
         # self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
@@ -124,6 +124,7 @@ def main(training_percent: int, num_iterations: int = 5) -> dict:
         start = time.time()
         clf.train(x_sample, y_sample)
         train_times[i] = time.time() - start
+
         accuracies[i] = clf.evaluate(test_images, test_labels)
 
     errors = 1.0 - accuracies

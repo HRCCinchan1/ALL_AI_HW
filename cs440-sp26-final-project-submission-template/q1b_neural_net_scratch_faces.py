@@ -22,7 +22,7 @@ import numpy as np
 
 from util_faces import load_faces, flatten_images
 
-
+# Functions used to build network 
 def relu(z):
     return np.maximum(0, z)
 
@@ -46,7 +46,7 @@ class ScratchNeuralNetworkFaces:
     """
     def __init__(self, input_size=70*60, hidden1_size=128, hidden2_size=64,
                  output_size=2, learning_rate=0.01, num_epochs=20,
-                 batch_size=32, seed=None):
+                 batch_size=32, seed: int | None = None):
         """Initialise network hyperparameters and weight matrices."""
         # TODO: initialize weights, biases, and hyperparameters.
 
