@@ -37,15 +37,32 @@ def softmax(z):
 
 
 class ScratchNeuralNetworkDigits:
+    """3 layer fully connected network: 784 to h1 to h2 to 10.
+
+    Use any reasonable hidden activation (ReLU, sigmoid, tanh). For the
+    output layer, softmax paired with cross entropy loss is typical.
+    Document your choices in the report.
+
+    Implementation notes:
+      * Store weights as numpy arrays: W1 (784, h1), W2 (h1, h2),
+        W3 (h2, 10), plus biases b1, b2, b3.
+      * Initialise with small random values (scaled Gaussian, He,
+        Xavier) to break symmetry.
+      * `forward` should cache intermediate activations so that
+        `backward` can compute gradients without re running forward.
+    """
+
     def __init__(self, input_size=784, hidden1_size=128, hidden2_size=64,
                  output_size=10, learning_rate=0.01, num_epochs=20,
                  batch_size=32, seed=None):
+        """Initialise network hyperparameters and weight matrices."""
+        # TODO: initialize self.W1, self.b1, self.W2, self.b2, self.W3,
+        # self.b3 and store the hyperparameters.
+
         rng = np.random.default_rng(seed)
         self.lr = learning_rate
         self.num_epochs = num_epochs
         self.batch_size = batch_size
-
-        # He initialisation
         self.W1 = rng.standard_normal((input_size, hidden1_size)) * np.sqrt(2 / input_size)
         self.b1 = np.zeros(hidden1_size)
         self.W2 = rng.standard_normal((hidden1_size, hidden2_size)) * np.sqrt(2 / hidden1_size)
@@ -55,6 +72,14 @@ class ScratchNeuralNetworkDigits:
         self.cache = {}
 
     def forward(self, X):
+        """Forward pass.
+
+        `X` has shape (N, 784). Return shape is (N, 10). You may return
+        probabilities (after softmax) or raw logits; keep `predict` and
+        `backward` consistent with your choice.
+        """
+        # TODO:
+
         z1 = X @ self.W1 + self.b1
         a1 = relu(z1)
         z2 = a1 @ self.W2 + self.b2
@@ -65,6 +90,14 @@ class ScratchNeuralNetworkDigits:
         return y_hat
 
     def backward(self, X, y_onehot):
+        """Back propagate loss gradients through the network.
+
+        `X` has shape (N, 784); `y_onehot` has shape (N, 10). Return a
+        dict like
+        `{"dW1": ..., "db1": ..., "dW2": ..., "db2": ..., "dW3": ..., "db3": ...}`.
+        """
+        # TODO: compute gradients of the loss w.r.t. each weight and bias.
+
         N = X.shape[0]
         c = self.cache
         # Output layer gradient (softmax + cross-entropy)
@@ -84,6 +117,8 @@ class ScratchNeuralNetworkDigits:
         return {"dW1": dW1, "db1": db1, "dW2": dW2, "db2": db2, "dW3": dW3, "db3": db3}
 
     def update_weights(self, grads):
+        """Apply one gradient descent step using `grads` from `backward`."""
+        # TODO: self.W1 -= self.learning_rate * grads["dW1"]  (etc.)
         self.W1 -= self.lr * grads["dW1"]
         self.b1 -= self.lr * grads["db1"]
         self.W2 -= self.lr * grads["dW2"]
@@ -92,6 +127,14 @@ class ScratchNeuralNetworkDigits:
         self.b3 -= self.lr * grads["db3"]
 
     def train(self, training_images, training_labels):
+        """Full training loop: epochs and mini batches.
+
+        `training_images` has shape (N, 28, 28). `training_labels` has
+        shape (N,) with values in {0..9}.
+        """
+        # TODO: flatten images, one hot encode labels, loop over epochs
+        # and mini batches, and call forward -> backward -> update_weights.
+
         X = flatten_images(training_images)
         N = X.shape[0]
         # One-hot encode
@@ -109,10 +152,16 @@ class ScratchNeuralNetworkDigits:
                 self.update_weights(grads)
 
     def predict(self, image):
+        """Predict a single label in {0..9} for a 28x28 image."""
+        # TODO: flatten, run forward, argmax over the output layer.
+
         x = image.ravel()[np.newaxis, :]
         return int(np.argmax(self.forward(x)))
 
     def evaluate(self, images, labels):
+        """Return classification accuracy on a batch of images."""
+        # TODO: vectorised: flatten all, forward once, argmax, compare.
+
         X = flatten_images(images)
         probs = self.forward(X)
         preds = np.argmax(probs, axis=1)
@@ -120,6 +169,7 @@ class ScratchNeuralNetworkDigits:
 
 
 def main(training_percent: int, num_iterations: int = 5) -> dict:
+    """Run the standard train/test pipeline for the scratch NN on digits."""
     training_images, training_labels = load_digits("training")
     test_images, test_labels = load_digits("test")
 
@@ -131,10 +181,14 @@ def main(training_percent: int, num_iterations: int = 5) -> dict:
 
     for i in range(num_iterations):
         idx = np.random.choice(num_total, size=sample_size, replace=False)
+        x_sample = training_images[idx]
+        y_sample = training_labels[idx]
+
         net = ScratchNeuralNetworkDigits()
         start = time.time()
-        net.train(training_images[idx], training_labels[idx])
+        net.train(x_sample, y_sample)
         train_times[i] = time.time() - start
+        
         accuracies[i] = net.evaluate(test_images, test_labels)
 
     errors = 1.0 - accuracies
